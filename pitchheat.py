@@ -86,7 +86,7 @@ def plot_data(date, pitcher, batter_side, pitch_call):
   plt.title(f'Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}, Pitch Call: {pitch_call}')
   legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=pitch) for pitch, color in pitch_colors.items()]
   ax.legend(handles=legend_handles, title="Pitch Types", loc='upper right')
-  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black", picker=True )
+  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black", picker=True, zorder=5 )
 
   def on_key(event):
     if event.key == 'escape':
@@ -114,7 +114,8 @@ def plot_data(date, pitcher, batter_side, pitch_call):
         xytext=(20, 20),
         textcoords='offset points',
         bbox=dict(boxstyle="round", fc="w"),
-        arrowprops=dict(arrowstyle="->")
+        arrowprops=dict(arrowstyle="->"),
+        zorder=10
     )
     plt.draw()
     
