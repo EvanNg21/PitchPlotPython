@@ -6,3 +6,9 @@ This inlucdes a plot where you can select date, pitcher, batter side, and pitch 
 
 Dropdown menu
 ![Alt text](image.png)
+
+Pitch plot
+![alt text](image-1.png)
+
+Heat Map
+![alt text](image-2.png)
