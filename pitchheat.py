@@ -23,11 +23,13 @@ data = pd.read_csv('TM24Szn(in).csv')
 batter = 'batter right.png'
 
 dates = data['Date'].unique()
-pitchers = data['Pitcher'].unique()
+pitchers = sorted(data['Pitcher'].unique())
 batter_options = list(data['BatterSide'].unique())
 batter_options.append("Both")
+pitch_options = list(data['PitchCall'].unique())
+pitch_options.insert(0, ("All"))
 
-def update_dates(*args):
+def update_pitcher(*args):
     selected_pitcher = pitcher_var.get()
     if selected_pitcher:
         pitcher_dates = data[data['Pitcher'] == selected_pitcher]['Date'].unique()
@@ -37,12 +39,22 @@ def update_dates(*args):
         else:
             date_var.set('')
 
+        pitcher_calls = data[data['Pitcher'] == selected_pitcher]['PitchCall'].unique()
+        call_dropdown['values'] = ["All"] + list(pitcher_calls)
+        if len(pitcher_calls) > 0:
+            call_var.set("All")
+        else:
+            call_var.set('')
+
 #function to display plot
-def plot_data(date, pitcher, batter_side):
+def plot_data(date, pitcher, batter_side, pitch_call):
   if batter_side == "Both":
     filtered_data = data[(data['Date'] == date) & (data['Pitcher'] == pitcher)] 
   else:
-    filtered_data = data[(data['Date'] == date) & (data['Pitcher'] == pitcher ) & (data['BatterSide']==batter_side)] 
+    filtered_data = data[(data['Date'] == date) & (data['Pitcher'] == pitcher ) & (data['BatterSide']==batter_side)]
+
+  if pitch_call != "All":
+    filtered_data = filtered_data[filtered_data['PitchCall'] == pitch_call] 
 
   x = [-0.85, -0.85, 0.85, 0.85, -0.85]
   y = [1.6, 3.5, 3.5, 1.6, 1.6]
@@ -59,8 +71,8 @@ def plot_data(date, pitcher, batter_side):
     img = Image.open(batter)
     ax.imshow(img, extent=[0.5,-4, -0.2, 5.2])
 
-  ax.scatter(x, y)
-  ax.plot(x, y, 'bo-')
+  ax.scatter(x, y,)
+  ax.plot(x, y, 'bo-', color="black")
   ax.grid(True)
   x_ticks = [i * 0.5 for i in range(int(min(x) * 10) - 20, int(max(x) * 10) + 21)]
   y_ticks = [i * 0.5 for i in range(int(min(y) * 10) - 20, int(max(y) * 10) + 21)]
@@ -71,7 +83,7 @@ def plot_data(date, pitcher, batter_side):
   ax.set_aspect('auto')
   plt.xlabel('PlateLocSide')
   plt.ylabel('PlateLocHeight')
-  plt.title(f'Date: {date}, Pitcher: {pitcher}')
+  plt.title(f'Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}, Pitch Call: {pitch_call}')
   legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=pitch) for pitch, color in pitch_colors.items()]
   ax.legend(handles=legend_handles, title="Pitch Types", loc='upper right')
   plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black" )
@@ -94,11 +106,14 @@ def plot_data(date, pitcher, batter_side):
       )
       sel.annotation.get_bbox_patch().set(fc="white", alpha=0.9)
 
-def plot_heat(date, pitcher, batter_side):
+def plot_heat(date, pitcher, batter_side, pitch_call):
   if batter_side == "Both":
     filtered_data = data[(data['Date'] == date) & (data['Pitcher'] == pitcher)] 
   else:
     filtered_data = data[(data['Date'] == date) & (data['Pitcher'] == pitcher ) & (data['BatterSide']==batter_side)] 
+
+  if pitch_call != "All":
+    filtered_data = filtered_data[filtered_data['PitchCall'] == pitch_call]
 
   x = [-0.85, -0.85, 0.85, 0.85, -0.85]
   y = [1.6, 3.5, 3.5, 1.6, 1.6]
@@ -140,7 +155,7 @@ def plot_heat(date, pitcher, batter_side):
   ax.set_ylim(0, 5)
   plt.xlabel('PlateLocSide')
   plt.ylabel('PlateLocHeight')
-  plt.title(f'Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}')
+  plt.title(f'HeatMap Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}, Pitch Call: {pitch_call}')
   plt.show(block=False)
 
 root = tk.Tk()
@@ -152,7 +167,7 @@ pitcher_dropdown = ttk.Combobox(root, textvariable=pitcher_var)
 pitcher_dropdown['values'] = list(pitchers)
 pitcher_dropdown.grid(row=1, column=1)
 pitcher_dropdown.set(pitchers[0] if len(pitchers) > 0 else "")
-pitcher_var.trace('w', update_dates)
+pitcher_var.trace('w', update_pitcher)
 
 # Dropdown for date
 date_var = tk.StringVar()
@@ -166,21 +181,28 @@ batter_dropdown['values'] = batter_options
 batter_dropdown.grid(row=2, column=1)
 batter_dropdown.set(batter_options[0])
 
+#dropdown for pitch call
+call_var = tk.StringVar()
+call_dropdown = ttk.Combobox(root, textvariable=call_var)
+call_dropdown.grid(row=3, column=1)
+
 # Labels
 ttk.Label(root, text="Select Date:").grid(row=0, column=0)
 ttk.Label(root, text="Select Pitcher:").grid(row=1, column=0)
 ttk.Label(root, text="Select Batter Side:").grid(row=2, column=0)
+ttk.Label(root, text="Select Pitch Call:").grid(row=3, column=0)
 
 # Button to plot
 def on_plot():
     date = date_var.get()
     pitcher = pitcher_var.get()
     batter_side = batter_var.get()
-    plot_data(date, pitcher, batter_side)
-    plot_heat(date, pitcher, batter_side)
+    pitch_call = call_var.get()
+    plot_data(date, pitcher, batter_side, pitch_call)
+    plot_heat(date, pitcher, batter_side, pitch_call)
 
 plot_button = ttk.Button(root, text="Plot", command=on_plot)
-plot_button.grid(row=3, column=0, columnspan=2)
+plot_button.grid(row=4, column=0, columnspan=2)
 
-update_dates()
+update_pitcher()
 root.mainloop()
