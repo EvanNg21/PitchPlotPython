@@ -15,10 +15,10 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 import tkinter as tk
 from tkinter import ttk
+import mplcursors
 
 #read data
 data = pd.read_csv('TM24Szn(in).csv')
-plateLocation = data[['Date','Pitcher','PlateLocHeight', 'PlateLocSide', 'TaggedPitchType']]
 
 batter = 'batter right.png'
 
@@ -47,8 +47,9 @@ def plot_data(date, pitcher, batter_side):
   x = [-0.85, -0.85, 0.85, 0.85, -0.85]
   y = [1.6, 3.5, 3.5, 1.6, 1.6]
 
-  pitch_colors = {'Fastball': 'red', 'Slider': 'blue', 'Curveball': 'green', 'Sinker':"purple", 'splitter': 'yellow', 'changeup': 'orange', 'cutter': 'grey'}
+  pitch_colors = {'Fastball': 'red', 'Slider': 'blue', 'Curveball': 'green', 'Sinker':"purple", 'Splitter': 'yellow', 'ChangeUp': 'orange', 'Cutter': 'grey'}
   colors = filtered_data['TaggedPitchType'].map(pitch_colors).fillna('black')
+  
   fig, ax=plt.subplots(figsize=(10, 10))
 
   if batter_side == "Right":
@@ -73,8 +74,25 @@ def plot_data(date, pitcher, batter_side):
   plt.title(f'Date: {date}, Pitcher: {pitcher}')
   legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=pitch) for pitch, color in pitch_colors.items()]
   ax.legend(handles=legend_handles, title="Pitch Types", loc='upper right')
-  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60 )
-  plt.show()
+  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black" )
+
+  cursor = mplcursors.cursor(hover=True)
+  @cursor.connect("add")
+  def on_add(sel):
+      # Use sel.index to get the index of the hovered point
+      row = filtered_data.iloc[sel.index]
+      sel.annotation.set_text(
+          f"Batter Side/Batter: {row['BatterSide']} {row['Batter']}\n"
+          f"Pitch: {row['TaggedPitchType']}\n"
+          f"Speed: {row['RelSpeed']:.2f}\n"
+          f"Side: {row['PlateLocSide']:.2f}\n"
+          f"Height: {row['PlateLocHeight']:.2f}\n"
+          f"Horizontal Break: {row['HorzBreak']:.2f}\n"
+          f"Vertical Break: {row['VertBreak']:.2f}\n"
+          f"Induced Vertical Break: {row['InducedVertBreak']:.2f}\n"
+          f"Pitch Call: {row['PitchCall']}"
+      )
+      sel.annotation.get_bbox_patch().set(fc="white", alpha=0.9)
 
 def plot_heat(date, pitcher, batter_side):
   if batter_side == "Both":
@@ -123,7 +141,7 @@ def plot_heat(date, pitcher, batter_side):
   plt.xlabel('PlateLocSide')
   plt.ylabel('PlateLocHeight')
   plt.title(f'Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}')
-  plt.show()
+  plt.show(block=False)
 
 root = tk.Tk()
 root.title("Pitch Heatmap Selector")
