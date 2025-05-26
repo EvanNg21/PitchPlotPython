@@ -86,25 +86,40 @@ def plot_data(date, pitcher, batter_side, pitch_call):
   plt.title(f'Date: {date}, Pitcher: {pitcher}, Batter Side: {batter_side}, Pitch Call: {pitch_call}')
   legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=pitch) for pitch, color in pitch_colors.items()]
   ax.legend(handles=legend_handles, title="Pitch Types", loc='upper right')
-  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black" )
+  plt.scatter(filtered_data['PlateLocSide'], filtered_data['PlateLocHeight'], c=colors, marker='o', s=60, edgecolors="black", picker=True )
 
-  cursor = mplcursors.cursor(hover=True)
-  @cursor.connect("add")
-  def on_add(sel):
-      # Use sel.index to get the index of the hovered point
-      row = filtered_data.iloc[sel.index]
-      sel.annotation.set_text(
-          f"Batter Side/Batter: {row['BatterSide']} {row['Batter']}\n"
-          f"Pitch: {row['TaggedPitchType']}\n"
-          f"Speed: {row['RelSpeed']:.2f}\n"
-          f"Side: {row['PlateLocSide']:.2f}\n"
-          f"Height: {row['PlateLocHeight']:.2f}\n"
-          f"Horizontal Break: {row['HorzBreak']:.2f}\n"
-          f"Vertical Break: {row['VertBreak']:.2f}\n"
-          f"Induced Vertical Break: {row['InducedVertBreak']:.2f}\n"
-          f"Pitch Call: {row['PitchCall']}"
-      )
-      sel.annotation.get_bbox_patch().set(fc="white", alpha=0.9)
+  def on_key(event):
+    if event.key == 'escape':
+        for annotation in ax.texts:
+            annotation.remove()
+        plt.draw()
+# Connect the key press event to the handler
+  fig.canvas.mpl_connect('key_press_event', on_key)
+  def on_pick(event):
+    for annotation in ax.texts:
+        annotation.remove()
+    ind = event.ind[0]
+    row = filtered_data.iloc[ind]
+    annotation = ax.annotate(
+        f"Batter Side/Batter: {row['BatterSide']} {row['Batter']}\n"
+        f"Pitch: {row['TaggedPitchType']}\n"
+        f"Speed: {row['RelSpeed']:.2f}\n"
+        f"Side: {row['PlateLocSide']:.2f}\n"
+        f"Height: {row['PlateLocHeight']:.2f}\n"
+        f"Horizontal Break: {row['HorzBreak']:.2f}\n"
+        f"Vertical Break: {row['VertBreak']:.2f}\n"
+        f"Induced Vertical Break: {row['InducedVertBreak']:.2f}\n"
+        f"Pitch Call: {row['PitchCall']}",
+        xy=(row['PlateLocSide'], row['PlateLocHeight']),
+        xytext=(20, 20),
+        textcoords='offset points',
+        bbox=dict(boxstyle="round", fc="w"),
+        arrowprops=dict(arrowstyle="->")
+    )
+    plt.draw()
+    
+  fig.canvas.mpl_connect('pick_event', on_pick)
+
 
 def plot_heat(date, pitcher, batter_side, pitch_call):
   if batter_side == "Both":
